@@ -1,20 +1,42 @@
 export const ENDPOINTS = {
+  // API Java
   auth: {
     login: '/auth/login',
-    registro: '/auth/registro',
-    me: '/auth/me',
+    registro: '/auth/register',
+  },
+
+  usuarios: {
+    me: '/usuarios/me',
+  },
+
+  placar: {
+    doBairro: (bairroId) => `/bairros/${bairroId}/placar`,
+  },
+
+  propostas: {
+    listar: '/propostas', // ?bairroId&status&categoria&page&size&sort
+    minhas: '/propostas/minhas',
+    porId: (id) => `/propostas/${id}`,
+    concluir: (id) => `/propostas/${id}/concluir`,
+  },
+
+  respostas: {
+    daProposta: (propostaId) => `/propostas/${propostaId}/resposta`,
+    rascunhoIa: (propostaId) => `/propostas/${propostaId}/resposta/rascunho-ia`,
+  },
+
+  notificacoes: {
+    listar: '/notificacoes',
+    marcarLida: (id) => `/notificacoes/${id}/lida`,
   },
 
   bairros: {
     listar: '/bairros',
+    porId: (id) => `/bairros/${id}`,
   },
 
-  propostas: {
-    listar: '/propostas', // ?bairroId&status&categoria&busca&page&size
-    minhas: '/propostas/minhas',
-    porId: (id) => `/propostas/${id}`,
-    similares: '/propostas/similares',
-    transcricao: '/propostas/transcricao',
+  apoios: {
+    daProposta: (propostaId) => `/propostas/${propostaId}/apoios`,
   },
 
   comentarios: {
@@ -22,23 +44,10 @@ export const ENDPOINTS = {
     porId: (id) => `/comentarios/${id}`,
   },
 
-  // API .NET
-  apoios: {
-    apoiar: '/apoios',
-    retirar: (propostaId) => `/apoios/${propostaId}`,
-    situacao: (propostaId) => `/apoios/${propostaId}/situacao`,
-  },
-
-  demandas: {
-    listar: '/demandas', // ?bairroId&status
-    resposta: (propostaId) => `/demandas/${propostaId}/resposta`,
-    rascunho: (propostaId) => `/demandas/${propostaId}/rascunho`,
-    concluir: (propostaId) => `/demandas/${propostaId}/concluir`,
-  },
-
-  placar: {
-    geral: '/placar',
-    doBairro: (bairroId) => `/placar/${bairroId}`,
+  // serviço de IA (opcional)
+  ia: {
+    similares: '/ia/propostas/similares',
+    transcricao: '/ia/transcricao',
   },
 };
 
