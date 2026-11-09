@@ -20,6 +20,7 @@ import ModalSimilares from '../../components/ModalSimilares';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import { FONTS, RADIUS, SPACING } from '../../constants/theme';
 import { LISTA_CATEGORIAS } from '../../constants/categorias';
+import { AUDIO_HABILITADO } from '../../config/env';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -57,7 +58,7 @@ export default function PropostaForm({ navigation, route }) {
         titulo: proposta.titulo,
         descricao: proposta.descricao,
         categoria: proposta.categoria,
-        origem: proposta.origem,
+        origem: 'TEXTO',
         transcricao: null,
       });
     }
@@ -142,7 +143,7 @@ export default function PropostaForm({ navigation, route }) {
       <Header title={editando ? 'Editar proposta' : 'Nova proposta'} onBack={() => navigation.goBack()} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          {!editando && (
+          {!editando && AUDIO_HABILITADO && (
             <View style={styles.modos}>
               {[
                 { valor: 'texto', label: 'Escrever', icon: 'edit-3' },
