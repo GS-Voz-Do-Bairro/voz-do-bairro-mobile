@@ -15,11 +15,13 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useDemandas } from '../../hooks/useDemandas';
 import useThemedStyles from '../../hooks/useThemedStyles';
 import { diasAte } from '../../utils/dateUtils';
+import { aguardaResposta } from '../../constants/status';
 
 const FILTROS = [
   { valor: 'PENDENTES', label: 'Pendentes', icon: 'inbox' },
   { valor: 'ATRASADA', label: 'Atrasadas', icon: 'alert-triangle' },
   { valor: 'SEMANA', label: 'Vencem em 7 dias', icon: 'clock' },
+  { valor: 'EM_EXECUCAO', label: 'Em execução', icon: 'tool' },
 ];
 
 export default function PainelGestor({ navigation }) {
@@ -36,21 +38,24 @@ export default function PainelGestor({ navigation }) {
     refetch,
     isRefetching,
   } = useDemandas({
-    bairroId: usuario?.bairroId,
+    bairroId: usuario?.bairroId ?? undefined,
   });
 
+  const pendentes = demandas.filter((d) => aguardaResposta(d.status));
   const atrasadas = demandas.filter((d) => d.status === 'ATRASADA');
+  const emExecucao = demandas.filter((d) => d.status === 'EM_EXECUCAO');
   const venceSemana = demandas.filter((d) => {
     const dias = diasAte(d.prazoResposta);
     return d.status === 'DEMANDA' && dias !== null && dias >= 0 && dias <= 7;
   });
-  const lista = filtro === 'ATRASADA' ? atrasadas : filtro === 'SEMANA' ? venceSemana : demandas;
+  const listas = { PENDENTES: pendentes, ATRASADA: atrasadas, SEMANA: venceSemana, EM_EXECUCAO: emExecucao };
+  const lista = listas[filtro];
 
   if (isLoading) return <LoadingOverlay mensagem="Carregando demandas..." />;
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
-      <Header title="Painel do gestor" subtitle={usuario?.bairroNome} />
+      <Header title="Painel do gestor" subtitle={usuario?.bairroNome || 'Todos os bairros'} />
       {isError ? (
         <ErrorState error={error} onRetry={refetch} />
       ) : (
@@ -65,10 +70,10 @@ export default function PainelGestor({ navigation }) {
             <View style={styles.cabecalho}>
               <Text style={styles.saudacao}>Olá, {usuario?.nome?.split(' ')[0]}</Text>
               <Text style={styles.texto}>
-                Estas demandas atingiram a meta de apoios e aguardam a resposta da prefeitura.
+                Demandas que atingiram a meta de apoios, das mais urgentes para as menos urgentes.
               </Text>
               <View style={styles.grade}>
-                <StatCard icon="inbox" label="Pendentes" value={demandas.length} color={COLORS.primary} />
+                <StatCard icon="inbox" label="Pendentes" value={pendentes.length} color={COLORS.primary} />
                 <StatCard
                   icon="alert-triangle"
                   label="Atrasadas"
@@ -94,6 +99,7 @@ export default function PainelGestor({ navigation }) {
             <PropostaCard
               proposta={item}
               mostrarPrazo
+              mostrarBairro={!usuario?.bairroId}
               onPress={() => navigation.navigate('PropostaDetalhe', { id: item.id })}
             />
           )}
