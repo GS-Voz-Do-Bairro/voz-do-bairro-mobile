@@ -2,11 +2,17 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { propostasService } from '../services/propostasService';
 import { queryKeys } from './queryKeys';
 
-export function usePropostas(filtros) {
+function contemTermo(proposta, termo) {
+  const alvo = `${proposta.titulo} ${proposta.descricao}`.toLowerCase();
+  return alvo.includes(termo.toLowerCase());
+}
+
+export function usePropostas({ bairroId, status, categoria } = {}, busca = '') {
+  const filtros = { bairroId, status, categoria };
   return useQuery({
     queryKey: queryKeys.propostas(filtros),
     queryFn: () => propostasService.listar(filtros),
-    enabled: !!filtros?.bairroId,
+    select: busca ? (lista) => lista.filter((p) => contemTermo(p, busca)) : undefined,
   });
 }
 
