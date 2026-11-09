@@ -28,7 +28,7 @@ export function useResponderDemanda(propostaId) {
 }
 
 export function useRascunhoParecer(propostaId) {
-  return useMutation({ mutationFn: (tipo) => demandasService.gerarRascunho(propostaId, tipo) });
+  return useMutation({ mutationFn: () => demandasService.gerarRascunho(propostaId) });
 }
 
 export function useConcluirDemanda(propostaId) {
