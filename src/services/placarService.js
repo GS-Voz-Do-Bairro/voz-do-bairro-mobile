@@ -1,16 +1,18 @@
-import api, { extrairLista } from './api';
+import api from './api';
 import { ENDPOINTS } from './endpoints';
 import { mapPlacar } from './mappers';
+import { bairrosService } from './bairrosService';
 
 export const placarService = {
-  geral: async () => {
-    const { data } = await api.get(ENDPOINTS.placar.geral);
-    return extrairLista(data).map(mapPlacar);
-  },
-
   doBairro: async (bairroId) => {
     const { data } = await api.get(ENDPOINTS.placar.doBairro(bairroId));
     return mapPlacar(data);
+  },
+
+  geral: async () => {
+    const bairros = await bairrosService.listar();
+    const resultados = await Promise.allSettled(bairros.map((b) => placarService.doBairro(b.id)));
+    return resultados.filter((r) => r.status === 'fulfilled').map((r) => r.value);
   },
 };
 

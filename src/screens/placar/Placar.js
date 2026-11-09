@@ -1,30 +1,34 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 
 import Header from '../../components/Header';
 import StatCard from '../../components/StatCard';
+import FiltroChips from '../../components/FiltroChips';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import ErrorState from '../../components/ErrorState';
 import { FONTS, RADIUS, SHADOW, SPACING } from '../../constants/theme';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useBairros } from '../../hooks/useBairros';
 import { usePlacarDoBairro, usePlacarGeral } from '../../hooks/usePlacar';
 import useThemedStyles from '../../hooks/useThemedStyles';
 
-function taxa(placar) {
-  if (placar.taxaAtendimento) return placar.taxaAtendimento;
-  const demandas = placar.atendidas + placar.atrasadas + placar.aguardando + placar.recusadas;
-  return demandas ? Math.round((placar.atendidas / demandas) * 100) : 0;
+function percentual(placar) {
+  return placar?.percentualNoPrazo == null ? null : Math.round(placar.percentualNoPrazo);
 }
 
 export default function Placar() {
   const { colors: COLORS } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { usuario } = useAuth();
+  const { data: bairros = [] } = useBairros();
 
-  const doBairro = usePlacarDoBairro(usuario?.bairroId);
+  const [escolhido, setEscolhido] = useState(null);
+  const bairroId = escolhido ?? usuario?.bairroId ?? bairros[0]?.id;
+
+  const doBairro = usePlacarDoBairro(bairroId);
   const geral = usePlacarGeral();
 
   const atualizar = () => {
@@ -32,107 +36,119 @@ export default function Placar() {
     geral.refetch();
   };
 
-  if (doBairro.isLoading) return <LoadingOverlay mensagem="Montando o placar..." />;
-
   const placar = doBairro.data;
-  const ranking = [...(geral.data ?? [])].sort((a, b) => taxa(b) - taxa(a));
+  const pct = percentual(placar);
+  const ranking = [...(geral.data ?? [])].sort((a, b) => (percentual(b) ?? -1) - (percentual(a) ?? -1));
+  const opcoesBairro = bairros.map((b) => ({ valor: b.id, label: b.nome, icon: 'map-pin' }));
+
+  const renderConteudo = () => {
+    if (!bairroId || doBairro.isLoading) return <LoadingOverlay mensagem="Montando o placar..." />;
+    if (doBairro.isError) return <ErrorState error={doBairro.error} onRetry={doBairro.refetch} />;
+    return (
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={doBairro.isRefetching}
+            onRefresh={atualizar}
+            colors={[COLORS.primary]}
+          />
+        }
+      >
+        <View style={styles.destaque}>
+          <Text style={styles.destaqueRotulo}>Demandas respondidas no prazo</Text>
+          <Text style={styles.destaqueValor}>{pct == null ? '—' : `${pct}%`}</Text>
+          <View style={styles.trilho}>
+            <View style={[styles.preenchido, { width: `${pct ?? 0}%` }]} />
+          </View>
+          <Text style={styles.destaqueNota}>
+            {pct == null
+              ? 'Ainda não há demandas com prazo neste bairro.'
+              : `${placar.respondidasNoPrazo} no prazo · ${placar.respondidas} respondidas · ${placar.vencidasSemResposta} vencidas sem resposta`}
+          </Text>
+        </View>
+
+        <View style={styles.grade}>
+          <StatCard icon="award" label="Concluídas" value={placar.concluidas} color={COLORS.success} />
+          <StatCard icon="tool" label="Em execução" value={placar.emExecucao} color={COLORS.primary} />
+        </View>
+        <View style={styles.grade}>
+          <StatCard
+            icon="alert-triangle"
+            label="Atrasadas"
+            value={placar.atrasadas}
+            color={COLORS.critical}
+          />
+          <StatCard
+            icon="clock"
+            label="Aguardando resposta"
+            value={placar.aguardando}
+            color={COLORS.warning}
+          />
+        </View>
+        <View style={styles.grade}>
+          <StatCard
+            icon="users"
+            label="Recebendo apoios"
+            value={placar.recebendoApoios}
+            color={COLORS.info}
+          />
+          <StatCard icon="x-circle" label="Recusadas" value={placar.recusadas} color={COLORS.neutral} />
+        </View>
+
+        <View style={styles.explicacao}>
+          <Feather name="info" size={16} color={COLORS.textSecondary} />
+          <Text style={styles.explicacaoTexto}>
+            Uma proposta vira demanda quando atinge a meta de apoios. A partir daí a prefeitura tem 15 dias
+            para responder. Quem não responde a tempo aparece como atrasada.
+          </Text>
+        </View>
+
+        {ranking.length > 1 && (
+          <>
+            <Text style={styles.secao}>Comparativo entre bairros</Text>
+            <View style={styles.card}>
+              {ranking.map((b, i) => {
+                const atual = b.bairroId === bairroId;
+                const p = percentual(b);
+                return (
+                  <View key={b.bairroId} style={[styles.linha, i > 0 && styles.linhaBorda]}>
+                    <Text style={styles.posicao}>{i + 1}º</Text>
+                    <View style={styles.flex}>
+                      <Text style={[styles.bairro, atual && { color: COLORS.primary }]}>{b.bairroNome}</Text>
+                      <View style={styles.trilhoMenor}>
+                        <View style={[styles.preenchidoMenor, { width: `${p ?? 0}%` }]} />
+                      </View>
+                      <Text style={styles.detalhe}>
+                        {b.concluidas + b.emExecucao} atendidas · {b.atrasadas} atrasadas · {b.total}{' '}
+                        propostas
+                      </Text>
+                    </View>
+                    <Text style={styles.percentual}>{p == null ? '—' : `${p}%`}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          </>
+        )}
+      </ScrollView>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
-      <Header title="Placar do bairro" subtitle={usuario?.bairroNome} />
-      {doBairro.isError ? (
-        <ErrorState error={doBairro.error} onRetry={doBairro.refetch} />
-      ) : (
-        <ScrollView
-          contentContainerStyle={styles.content}
-          refreshControl={
-            <RefreshControl
-              refreshing={doBairro.isRefetching}
-              onRefresh={atualizar}
-              colors={[COLORS.primary]}
-            />
-          }
-        >
-          <View style={styles.destaque}>
-            <Text style={styles.destaqueRotulo}>Demandas atendidas pela prefeitura</Text>
-            <Text style={styles.destaqueValor}>{taxa(placar)}%</Text>
-            <View style={styles.trilho}>
-              <View style={[styles.preenchido, { width: `${taxa(placar)}%` }]} />
-            </View>
-            <Text style={styles.destaqueNota}>{placar.total} propostas publicadas no bairro</Text>
-          </View>
-
-          <View style={styles.grade}>
-            <StatCard icon="check-circle" label="Atendidas" value={placar.atendidas} color={COLORS.success} />
-            <StatCard
-              icon="alert-triangle"
-              label="Atrasadas"
-              value={placar.atrasadas}
-              color={COLORS.critical}
-            />
-          </View>
-          <View style={styles.grade}>
-            <StatCard
-              icon="eye-off"
-              label="Ignoradas"
-              value={placar.ignoradas}
-              color={COLORS.secondaryDark}
-            />
-            <StatCard
-              icon="clock"
-              label="Aguardando resposta"
-              value={placar.aguardando}
-              color={COLORS.warning}
-            />
-          </View>
-          <View style={styles.grade}>
-            <StatCard
-              icon="users"
-              label="Recebendo apoios"
-              value={placar.recebendoApoios}
-              color={COLORS.info}
-            />
-            <StatCard icon="x-circle" label="Recusadas" value={placar.recusadas} color={COLORS.neutral} />
-          </View>
-
-          <View style={styles.explicacao}>
-            <Feather name="info" size={16} color={COLORS.textSecondary} />
-            <Text style={styles.explicacaoTexto}>
-              Uma proposta vira demanda quando atinge a meta de apoios. A partir daí a prefeitura tem prazo
-              para responder. Quem não responde a tempo aparece como atrasada.
-            </Text>
-          </View>
-
-          {ranking.length > 1 && (
-            <>
-              <Text style={styles.secao}>Comparativo entre bairros</Text>
-              <View style={styles.card}>
-                {ranking.map((b, i) => {
-                  const atual = b.bairroId === usuario?.bairroId;
-                  return (
-                    <View key={b.bairroId} style={[styles.linha, i > 0 && styles.linhaBorda]}>
-                      <Text style={styles.posicao}>{i + 1}º</Text>
-                      <View style={styles.flex}>
-                        <Text style={[styles.bairro, atual && { color: COLORS.primary }]}>
-                          {b.bairroNome}
-                          {atual ? ' (seu bairro)' : ''}
-                        </Text>
-                        <View style={styles.trilhoMenor}>
-                          <View style={[styles.preenchidoMenor, { width: `${taxa(b)}%` }]} />
-                        </View>
-                        <Text style={styles.detalhe}>
-                          {b.atendidas} atendidas · {b.atrasadas} atrasadas
-                        </Text>
-                      </View>
-                      <Text style={styles.percentual}>{taxa(b)}%</Text>
-                    </View>
-                  );
-                })}
-              </View>
-            </>
-          )}
-        </ScrollView>
+      <Header title="Placar do bairro" subtitle={placar?.bairroNome || usuario?.bairroNome} />
+      {opcoesBairro.length > 1 && (
+        <View>
+          <FiltroChips
+            opcoes={opcoesBairro}
+            selecionado={bairroId}
+            onSelecionar={setEscolhido}
+            style={styles.chips}
+          />
+        </View>
       )}
+      <View style={styles.flex}>{renderConteudo()}</View>
     </SafeAreaView>
   );
 }
@@ -141,6 +157,7 @@ const createStyles = (COLORS) =>
   StyleSheet.create({
     safe: { flex: 1, backgroundColor: COLORS.background },
     flex: { flex: 1 },
+    chips: { paddingVertical: SPACING.md },
     content: { padding: SPACING.lg, gap: SPACING.md, paddingBottom: SPACING.xxl },
     destaque: {
       backgroundColor: COLORS.header,
