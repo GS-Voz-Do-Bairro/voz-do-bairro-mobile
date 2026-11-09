@@ -6,17 +6,19 @@
   "build": {
     "preview": {
       "distribution": "internal",
-      "android": { "buildType": "apk" },
+      "android": {
+        "buildType": "apk"
+      },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://URL-DA-API-JAVA/api",
-        "EXPO_PUBLIC_APOIOS_API_URL": "https://URL-DA-API-DOTNET/api"
+        "EXPO_PUBLIC_API_URL": "https://voz-do-bairro-java.onrender.com/api"
       }
     },
     "production": {
-      "android": { "buildType": "apk" },
+      "android": {
+        "buildType": "apk"
+      },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://URL-DA-API-JAVA/api",
-        "EXPO_PUBLIC_APOIOS_API_URL": "https://URL-DA-API-DOTNET/api"
+        "EXPO_PUBLIC_API_URL": "https://voz-do-bairro-java.onrender.com/api"
       }
     }
   }

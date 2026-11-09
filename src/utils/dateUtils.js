@@ -1,9 +1,14 @@
 export function parseData(valor) {
   if (!valor) return null;
-  const [data, hora = '00:00:00'] = String(valor).replace('Z', '').split('T');
+  const texto = String(valor);
+  if (/T.*(Z|[+-]\d{2}:?\d{2})$/.test(texto)) {
+    const d = new Date(texto);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  const [data, hora = '00:00:00'] = texto.split('T');
   const [ano, mes, dia] = data.split('-').map(Number);
-  const [h = 0, m = 0, s = 0] = hora.split(':').map((n) => Number.parseInt(n, 10));
-  const resultado = new Date(ano, mes - 1, dia, h, m, s);
+  const [h = 0, m = 0, seg = 0] = hora.split(':').map((n) => Number.parseInt(n, 10));
+  const resultado = new Date(ano, mes - 1, dia, h, m, seg);
   return Number.isNaN(resultado.getTime()) ? null : resultado;
 }
 

@@ -2,10 +2,9 @@ export const STATUS_PROPOSTA = {
   ABERTA: { label: 'Recebendo apoios', icon: 'users', tom: 'info' },
   DEMANDA: { label: 'Aguardando resposta', icon: 'clock', tom: 'warning' },
   ATRASADA: { label: 'Resposta atrasada', icon: 'alert-triangle', tom: 'critical' },
-  ACEITA: { label: 'Aceita', icon: 'check-circle', tom: 'success' },
-  AGENDADA: { label: 'Agendada', icon: 'calendar', tom: 'primary' },
-  RECUSADA: { label: 'Recusada', icon: 'x-circle', tom: 'neutral' },
+  EM_EXECUCAO: { label: 'Em execução', icon: 'tool', tom: 'primary' },
   CONCLUIDA: { label: 'Concluída', icon: 'award', tom: 'success' },
+  RECUSADA: { label: 'Recusada', icon: 'x-circle', tom: 'neutral' },
 };
 
 export const FILTROS_STATUS = [
@@ -13,15 +12,14 @@ export const FILTROS_STATUS = [
   { valor: 'ABERTA', label: 'Recebendo apoios' },
   { valor: 'DEMANDA', label: 'Aguardando' },
   { valor: 'ATRASADA', label: 'Atrasadas' },
-  { valor: 'ACEITA', label: 'Aceitas' },
-  { valor: 'AGENDADA', label: 'Agendadas' },
+  { valor: 'EM_EXECUCAO', label: 'Em execução' },
   { valor: 'CONCLUIDA', label: 'Concluídas' },
+  { valor: 'RECUSADA', label: 'Recusadas' },
 ];
 
-export const TIPOS_RESPOSTA = {
-  ACEITA: { label: 'Aceitar', icon: 'check', tom: 'success' },
-  AGENDADA: { label: 'Agendar', icon: 'calendar', tom: 'primary' },
-  RECUSADA: { label: 'Recusar', icon: 'x', tom: 'critical' },
+export const DECISOES = {
+  ACEITA: { label: 'Aceitar', resultado: 'Aceita', icon: 'check', tom: 'success' },
+  RECUSADA: { label: 'Recusar', resultado: 'Recusada', icon: 'x', tom: 'critical' },
 };
 
 export function infoStatus(status) {
@@ -32,6 +30,6 @@ export function corDoTom(tom, colors) {
   return colors[tom] ?? colors.neutral;
 }
 
-export function podeEditar(status) {
-  return status === 'ABERTA';
+export function aguardaResposta(status) {
+  return status === 'DEMANDA' || status === 'ATRASADA';
 }

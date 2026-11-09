@@ -8,8 +8,9 @@ import { FONTS, RADIUS, SHADOW, SPACING } from '../constants/theme';
 import { useTheme } from '../contexts/ThemeContext';
 import useThemedStyles from '../hooks/useThemedStyles';
 import { tempoRelativo, textoPrazo, diasAte } from '../utils/dateUtils';
+import { aguardaResposta } from '../constants/status';
 
-export default function PropostaCard({ proposta, onPress, mostrarPrazo = false }) {
+export default function PropostaCard({ proposta, onPress, mostrarPrazo = false, mostrarBairro = false }) {
   const { colors: COLORS } = useTheme();
   const styles = useThemedStyles(createStyles);
   const prazoVencido = diasAte(proposta.prazoResposta) < 0;
@@ -38,6 +39,7 @@ export default function PropostaCard({ proposta, onPress, mostrarPrazo = false }
         <BarraApoios total={proposta.totalApoios} meta={proposta.metaApoios} compacta />
       ) : (
         mostrarPrazo &&
+        aguardaResposta(proposta.status) &&
         !!proposta.prazoResposta && (
           <View style={styles.prazo}>
             <Feather name="clock" size={13} color={prazoVencido ? COLORS.critical : COLORS.warning} />
@@ -52,10 +54,11 @@ export default function PropostaCard({ proposta, onPress, mostrarPrazo = false }
         <View style={styles.info}>
           <Feather name="thumbs-up" size={13} color={COLORS.textMuted} />
           <Text style={styles.infoTexto}>{proposta.totalApoios}</Text>
-          <Feather name="message-square" size={13} color={COLORS.textMuted} style={styles.espaco} />
-          <Text style={styles.infoTexto}>{proposta.totalComentarios}</Text>
-          {proposta.origem === 'AUDIO' && (
-            <Feather name="mic" size={13} color={COLORS.textMuted} style={styles.espaco} />
+          {mostrarBairro && !!proposta.bairroNome && (
+            <>
+              <Feather name="map-pin" size={13} color={COLORS.textMuted} style={styles.espaco} />
+              <Text style={styles.infoTexto}>{proposta.bairroNome}</Text>
+            </>
           )}
         </View>
         <Text style={styles.infoTexto}>

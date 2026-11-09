@@ -3,12 +3,12 @@ import { diasAte } from './dateUtils';
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const LIMITES = {
-  nome: { min: 3, max: 100 },
-  senha: { min: 6, max: 72 },
-  titulo: { min: 10, max: 120 },
+  nome: { min: 3, max: 120 },
+  senha: { min: 8, max: 72 },
+  titulo: { min: 5, max: 150 },
   descricao: { min: 20, max: 2000 },
-  comentario: { min: 2, max: 500 },
-  justificativa: { min: 20, max: 2000 },
+  comentario: { min: 2, max: 1000 },
+  justificativa: { min: 10, max: 2000 },
 };
 
 const tamanho = (texto) => (texto ?? '').trim().length;
@@ -52,14 +52,17 @@ export function validarComentario(texto) {
   return null;
 }
 
-export function validarResposta({ tipo, justificativa, dataPrevista }) {
+export function validarResposta({ decisao, justificativa, prazoExecucao }) {
   const erros = {};
-  if (!tipo) erros.tipo = 'Escolha a decisão.';
+  if (!decisao) erros.decisao = 'Escolha a decisão.';
   if (tamanho(justificativa) < LIMITES.justificativa.min)
     erros.justificativa = 'Escreva o parecer para os moradores.';
-  if (tipo === 'AGENDADA') {
-    if (!dataPrevista) erros.dataPrevista = 'Informe uma data válida (dd/mm/aaaa).';
-    else if (diasAte(dataPrevista) < 0) erros.dataPrevista = 'A data prevista não pode estar no passado.';
+  else if (tamanho(justificativa) > LIMITES.justificativa.max)
+    erros.justificativa = `Máximo de ${LIMITES.justificativa.max} caracteres.`;
+  if (decisao === 'ACEITA') {
+    if (!prazoExecucao) erros.prazoExecucao = 'Informe o prazo de execução (dd/mm/aaaa).';
+    else if (diasAte(prazoExecucao) <= 0)
+      erros.prazoExecucao = 'O prazo de execução precisa ser uma data futura.';
   }
   return erros;
 }

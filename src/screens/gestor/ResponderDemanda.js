@@ -18,7 +18,7 @@ import PrimaryButton from '../../components/PrimaryButton';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import ErrorState from '../../components/ErrorState';
 import { FONTS, RADIUS, SPACING } from '../../constants/theme';
-import { TIPOS_RESPOSTA, corDoTom } from '../../constants/status';
+import { DECISOES, corDoTom } from '../../constants/status';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useProposta } from '../../hooks/usePropostas';
 import { useRascunhoParecer, useResponderDemanda } from '../../hooks/useDemandas';
@@ -36,24 +36,26 @@ export default function ResponderDemanda({ navigation, route }) {
   const responder = useResponderDemanda(id);
   const rascunho = useRascunhoParecer(id);
 
-  const [tipo, setTipo] = useState(null);
+  const [decisao, setDecisao] = useState(null);
   const [justificativa, setJustificativa] = useState('');
-  const [dataTexto, setDataTexto] = useState('');
+  const [prazoTexto, setPrazoTexto] = useState('');
+  const [sugestao, setSugestao] = useState(null);
   const [erros, setErros] = useState({});
 
   if (isLoading) return <LoadingOverlay mensagem="Carregando demanda..." />;
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
 
-  const precisaData = tipo === 'AGENDADA' || tipo === 'ACEITA';
+  const escolherDecisao = (valor) => {
+    setDecisao(valor);
+    setErros((prev) => ({ ...prev, decisao: null }));
+  };
 
   const handleRascunho = async () => {
-    if (!tipo) {
-      setErros({ tipo: 'Escolha a decisão para gerar o rascunho.' });
-      return;
-    }
     try {
-      const texto = await rascunho.mutateAsync(tipo);
-      setJustificativa(texto);
+      const resultado = await rascunho.mutateAsync();
+      setSugestao(resultado);
+      setJustificativa(resultado.justificativa);
+      if (!decisao && resultado.sugestaoDecisao) setDecisao(resultado.sugestaoDecisao);
       setErros((prev) => ({ ...prev, justificativa: null }));
     } catch (e) {
       Alert.alert('Não foi possível gerar o rascunho', mensagemDeErro(e));
@@ -73,13 +75,14 @@ export default function ResponderDemanda({ navigation, route }) {
   };
 
   const handleEnviar = () => {
-    const dataPrevista = dataTexto ? brParaIso(dataTexto) : null;
-    const e = validarResposta({ tipo, justificativa, dataPrevista });
-    if (dataTexto && !dataPrevista) e.dataPrevista = 'Data inválida. Use dd/mm/aaaa.';
+    const prazoExecucao = prazoTexto ? brParaIso(prazoTexto) : null;
+    const e = validarResposta({ decisao, justificativa, prazoExecucao });
+    if (decisao === 'ACEITA' && prazoTexto && !prazoExecucao)
+      e.prazoExecucao = 'Data inválida. Use dd/mm/aaaa.';
     setErros(e);
     if (Object.keys(e).length) return;
 
-    const dados = { tipo, justificativa, dataPrevista: precisaData ? dataPrevista : null };
+    const dados = { decisao, justificativa, prazoExecucao };
     Alert.alert('Enviar resposta', 'A resposta fica pública para todos os moradores. Confirma o envio?', [
       { text: 'Revisar', style: 'cancel' },
       { text: 'Enviar', onPress: () => enviar(dados) },
@@ -101,17 +104,14 @@ export default function ResponderDemanda({ navigation, route }) {
 
           <Text style={styles.label}>Decisão</Text>
           <View style={styles.decisoes}>
-            {Object.entries(TIPOS_RESPOSTA).map(([valor, info]) => {
-              const ativo = tipo === valor;
+            {Object.entries(DECISOES).map(([valor, info]) => {
+              const ativo = decisao === valor;
               const cor = corDoTom(info.tom, COLORS);
               return (
                 <TouchableOpacity
                   key={valor}
                   style={[styles.decisao, ativo && { backgroundColor: cor, borderColor: cor }]}
-                  onPress={() => {
-                    setTipo(valor);
-                    setErros((prev) => ({ ...prev, tipo: null }));
-                  }}
+                  onPress={() => escolherDecisao(valor)}
                   accessibilityRole="radio"
                   accessibilityState={{ checked: ativo }}
                 >
@@ -121,20 +121,20 @@ export default function ResponderDemanda({ navigation, route }) {
               );
             })}
           </View>
-          <Text style={styles.erro}>{erros.tipo || ''}</Text>
+          <Text style={styles.erro}>{erros.decisao || ''}</Text>
 
-          {precisaData && (
+          {decisao === 'ACEITA' && (
             <CustomInput
-              label={tipo === 'AGENDADA' ? 'Data prevista' : 'Data prevista (opcional)'}
+              label="Prazo de execução"
               icon="calendar"
               placeholder="dd/mm/aaaa"
               keyboardType="number-pad"
-              value={dataTexto}
+              value={prazoTexto}
               onChangeText={(t) => {
-                setDataTexto(mascaraData(t));
-                setErros((prev) => ({ ...prev, dataPrevista: null }));
+                setPrazoTexto(mascaraData(t));
+                setErros((prev) => ({ ...prev, prazoExecucao: null }));
               }}
-              error={erros.dataPrevista}
+              error={erros.prazoExecucao}
             />
           )}
 
@@ -162,7 +162,26 @@ export default function ResponderDemanda({ navigation, route }) {
             }}
             error={erros.justificativa}
           />
-          <Text style={styles.dica}>O rascunho é só um ponto de partida: revise antes de enviar.</Text>
+          {sugestao ? (
+            <View style={styles.sugestao}>
+              {!!sugestao.sugestaoDecisao && (
+                <Text style={styles.sugestaoTitulo}>
+                  Sugestão: {DECISOES[sugestao.sugestaoDecisao]?.resultado ?? sugestao.sugestaoDecisao}
+                </Text>
+              )}
+              {sugestao.pontosDeAtencao.map((ponto) => (
+                <View key={ponto} style={styles.ponto}>
+                  <Feather name="alert-circle" size={13} color={COLORS.warning} />
+                  <Text style={styles.pontoTexto}>{ponto}</Text>
+                </View>
+              ))}
+              <Text style={styles.dica}>
+                {sugestao.aviso || 'O rascunho é só um ponto de partida: revise antes de enviar.'}
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles.dica}>O rascunho é só um ponto de partida: revise antes de enviar.</Text>
+          )}
 
           <PrimaryButton
             label="Enviar resposta"
@@ -241,6 +260,16 @@ const createStyles = (COLORS) =>
       marginBottom: SPACING.sm,
     },
     botaoIaTexto: { fontFamily: FONTS.bold, fontSize: FONTS.sizes.xs, color: COLORS.primary },
+    sugestao: {
+      backgroundColor: COLORS.surfaceAlt,
+      borderRadius: RADIUS.md,
+      padding: SPACING.md,
+      gap: 6,
+      marginBottom: SPACING.lg,
+    },
+    sugestaoTitulo: { fontFamily: FONTS.bold, fontSize: FONTS.sizes.sm, color: COLORS.textPrimary },
+    ponto: { flexDirection: 'row', gap: 6, alignItems: 'flex-start' },
+    pontoTexto: { flex: 1, fontFamily: FONTS.regular, fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
     dica: {
       fontFamily: FONTS.regular,
       fontSize: FONTS.sizes.xs,

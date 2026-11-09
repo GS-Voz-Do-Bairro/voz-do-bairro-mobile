@@ -86,7 +86,7 @@ export default function Cadastro({ navigation }) {
             <CustomInput
               label="Senha"
               icon="lock"
-              placeholder="Mínimo de 6 caracteres"
+              placeholder="Mínimo de 8 caracteres"
               secureTextEntry
               autoComplete="new-password"
               value={form.senha}

@@ -1,33 +1,34 @@
-import api, { extrairLista } from './api';
+import api from './api';
 import { ENDPOINTS } from './endpoints';
-import { mapProposta, mapResposta } from './mappers';
-import { UPLOAD_TIMEOUT_MS } from '../config/env';
+import { propostasService } from './propostasService';
+import { mapRascunho, mapResposta, respostaParaApi } from './mappers';
+import { IA_TIMEOUT_MS } from '../config/env';
+
+const STATUS_DO_PAINEL = ['DEMANDA', 'ATRASADA', 'EM_EXECUCAO'];
 
 export const demandasService = {
-  listar: async ({ bairroId, status } = {}) => {
-    const { data } = await api.get(ENDPOINTS.demandas.listar, { params: { bairroId, status } });
-    return extrairLista(data).map(mapProposta);
+  listar: async ({ bairroId } = {}) => {
+    const listas = await Promise.all(
+      STATUS_DO_PAINEL.map((status) => propostasService.listar({ bairroId, status })),
+    );
+    return listas
+      .flat()
+      .sort((a, b) => String(a.prazoResposta ?? '9').localeCompare(String(b.prazoResposta ?? '9')));
   },
 
-  responder: async (propostaId, { tipo, justificativa, dataPrevista }) => {
-    const { data } = await api.post(ENDPOINTS.demandas.resposta(propostaId), {
-      tipo,
-      justificativa: justificativa.trim(),
-      dataPrevista: dataPrevista || null,
-    });
+  responder: async (propostaId, resposta) => {
+    const { data } = await api.post(ENDPOINTS.respostas.daProposta(propostaId), respostaParaApi(resposta));
     return mapResposta(data);
   },
 
-  gerarRascunho: async (propostaId, tipo) => {
-    const { data } = await api.post(
-      ENDPOINTS.demandas.rascunho(propostaId),
-      { tipo },
-      { timeout: UPLOAD_TIMEOUT_MS },
-    );
-    return data?.texto ?? data?.rascunho ?? '';
+  gerarRascunho: async (propostaId) => {
+    const { data } = await api.post(ENDPOINTS.respostas.rascunhoIa(propostaId), null, {
+      timeout: IA_TIMEOUT_MS,
+    });
+    return mapRascunho(data);
   },
 
-  concluir: (propostaId) => api.put(ENDPOINTS.demandas.concluir(propostaId)),
+  concluir: (propostaId) => propostasService.concluir(propostaId),
 };
 
 export default demandasService;
