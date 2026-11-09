@@ -14,7 +14,7 @@ export const authService = {
   },
 
   me: async () => {
-    const { data } = await api.get(ENDPOINTS.auth.me);
+    const { data } = await api.get(ENDPOINTS.usuarios.me);
     return mapUsuario(data);
   },
 };

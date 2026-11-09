@@ -17,8 +17,14 @@ export function AuthProvider({ children }) {
     setUsuario(null);
   }, []);
 
-  const iniciarSessao = useCallback(async ({ token, usuario: perfil }) => {
+  const iniciarSessao = useCallback(async ({ token, usuario: doToken }) => {
     await salvarToken(token);
+    let perfil = doToken;
+    try {
+      perfil = await authService.me();
+    } catch {
+      // ignora
+    }
     await salvarUsuario(perfil);
     setUsuario(perfil);
     return perfil;
@@ -69,8 +75,7 @@ export function AuthProvider({ children }) {
       try {
         const dados = { nome: nome.trim(), email: email.trim().toLowerCase(), senha, bairroId };
         const resposta = await authService.registrar(dados);
-        const sessao = resposta.token ? resposta : await authService.login({ email: dados.email, senha });
-        return await iniciarSessao(sessao);
+        return await iniciarSessao(resposta);
       } finally {
         setProcessando(false);
       }
