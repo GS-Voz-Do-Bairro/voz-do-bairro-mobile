@@ -1,24 +1,29 @@
-import api, { extrairLista } from './api';
+import { dotnetApi, extrairLista } from './api';
 import { ENDPOINTS } from './endpoints';
 import { mapComentario } from './mappers';
+import { comIdempotencia } from '../utils/idempotencia';
 
 export const comentariosService = {
   listar: async (propostaId) => {
-    const { data } = await api.get(ENDPOINTS.comentarios.daProposta(propostaId));
+    const { data } = await dotnetApi.get(ENDPOINTS.comentarios.daProposta(propostaId), {
+      params: { page: 1, pageSize: 50 },
+    });
     return extrairLista(data).map(mapComentario);
   },
 
   criar: async (propostaId, texto) => {
-    const { data } = await api.post(ENDPOINTS.comentarios.daProposta(propostaId), { texto: texto.trim() });
+    const { data } = await comIdempotencia((headers) =>
+      dotnetApi.post(ENDPOINTS.comentarios.daProposta(propostaId), { texto: texto.trim() }, { headers }),
+    );
     return mapComentario(data);
   },
 
   atualizar: async (id, texto) => {
-    const { data } = await api.put(ENDPOINTS.comentarios.porId(id), { texto: texto.trim() });
+    const { data } = await dotnetApi.put(ENDPOINTS.comentarios.porId(id), { texto: texto.trim() });
     return mapComentario(data);
   },
 
-  remover: (id) => api.delete(ENDPOINTS.comentarios.porId(id)),
+  remover: (id) => dotnetApi.delete(ENDPOINTS.comentarios.porId(id)),
 };
 
 export default comentariosService;
