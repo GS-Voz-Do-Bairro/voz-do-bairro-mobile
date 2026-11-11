@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { FONTS, RADIUS, SPACING } from '../constants/theme';
+import { FONTS, SPACING } from '../constants/theme';
 import { useTheme } from '../contexts/ThemeContext';
 import useThemedStyles from '../hooks/useThemedStyles';
 import { tempoRelativo } from '../utils/dateUtils';
@@ -9,7 +9,6 @@ import { tempoRelativo } from '../utils/dateUtils';
 export default function ComentarioItem({ comentario, ehAutor, onEditar, onExcluir }) {
   const { colors: COLORS } = useTheme();
   const styles = useThemedStyles(createStyles);
-  const gestor = comentario.autorPapel === 'GESTOR';
   const iniciais = (comentario.autorNome || '?')
     .split(' ')
     .slice(0, 2)
@@ -18,7 +17,7 @@ export default function ComentarioItem({ comentario, ehAutor, onEditar, onExclui
 
   return (
     <View style={styles.container}>
-      <View style={[styles.avatar, gestor && styles.avatarGestor]}>
+      <View style={styles.avatar}>
         <Text style={styles.avatarTexto}>{iniciais}</Text>
       </View>
       <View style={styles.corpo}>
@@ -26,7 +25,6 @@ export default function ComentarioItem({ comentario, ehAutor, onEditar, onExclui
           <Text style={styles.nome} numberOfLines={1}>
             {comentario.autorNome}
           </Text>
-          {gestor && <Text style={styles.selo}>Prefeitura</Text>}
           <Text style={styles.data}>
             {tempoRelativo(comentario.criadoEm)}
             {comentario.editado ? ' · editado' : ''}
@@ -69,20 +67,10 @@ const createStyles = (COLORS) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    avatarGestor: { backgroundColor: COLORS.secondary + '33' },
     avatarTexto: { fontFamily: FONTS.bold, fontSize: FONTS.sizes.sm, color: COLORS.primary },
     corpo: { flex: 1 },
     cabecalho: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
     nome: { fontFamily: FONTS.bold, fontSize: FONTS.sizes.sm, color: COLORS.textPrimary, maxWidth: '55%' },
-    selo: {
-      fontFamily: FONTS.bold,
-      fontSize: 10,
-      color: COLORS.secondaryDark,
-      backgroundColor: COLORS.secondary + '22',
-      paddingHorizontal: 6,
-      paddingVertical: 1,
-      borderRadius: RADIUS.sm,
-    },
     data: { fontFamily: FONTS.regular, fontSize: FONTS.sizes.xs, color: COLORS.textMuted },
     texto: {
       fontFamily: FONTS.regular,
