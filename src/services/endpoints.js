@@ -30,6 +30,7 @@ export const ENDPOINTS = {
     marcarLida: (id) => `/notificacoes/${id}/lida`,
   },
 
+  // API .NET
   bairros: {
     listar: '/bairros',
     porId: (id) => `/bairros/${id}`,
@@ -37,6 +38,8 @@ export const ENDPOINTS = {
 
   apoios: {
     daProposta: (propostaId) => `/propostas/${propostaId}/apoios`,
+    resumo: (propostaId) => `/propostas/${propostaId}/apoios/resumo`,
+    meus: '/usuarios/me/apoios',
   },
 
   comentarios: {
