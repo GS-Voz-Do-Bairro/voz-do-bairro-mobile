@@ -10,6 +10,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import useThemedStyles from '../../hooks/useThemedStyles';
 import { BUILD_INFO } from '../../config/buildInfo';
+import { useNaoLidas } from '../../hooks/useNotificacoes';
 
 const OPCOES_TEMA = [
   { value: 'system', label: 'Sistema', icon: 'smartphone' },
@@ -44,6 +45,7 @@ export default function Perfil({ navigation }) {
   const styles = useThemedStyles(createStyles);
   const { usuario, isGestor, logout } = useAuth();
   const [saindo, setSaindo] = useState(false);
+  const naoLidas = useNaoLidas();
 
   const iniciais = (usuario?.nome || '?')
     .trim()
@@ -101,6 +103,36 @@ export default function Perfil({ navigation }) {
               COLORS={COLORS}
             />
           )}
+          {!isGestor && (
+            <ItemMenu
+              icon="thumbs-up"
+              label="Meus apoios"
+              descricao="Propostas que você apoiou"
+              onPress={() => navigation.navigate('MeusApoios')}
+              styles={styles}
+              COLORS={COLORS}
+            />
+          )}
+          {isGestor && (
+            <ItemMenu
+              icon="map"
+              label="Bairros"
+              descricao="Cadastre bairros e ajuste a meta de apoios"
+              onPress={() => navigation.navigate('GerenciarBairros')}
+              styles={styles}
+              COLORS={COLORS}
+            />
+          )}
+          <ItemMenu
+            icon="bell"
+            label="Notificações"
+            descricao={
+              naoLidas ? `${naoLidas} não lida${naoLidas > 1 ? 's' : ''}` : 'Avisos sobre as suas propostas'
+            }
+            onPress={() => navigation.navigate('Notificacoes')}
+            styles={styles}
+            COLORS={COLORS}
+          />
           <ItemMenu
             icon="info"
             label="Sobre o app"
