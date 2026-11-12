@@ -5,3 +5,23 @@ export function gerarChaveIdempotencia() {
     return v.toString(16);
   });
 }
+
+const TENTATIVAS = 2;
+
+/**
+ * Executa a requisição com um Idempotency-Key. Se a rede cair sem resposta,
+ * tenta de novo com a MESMA chave, e a API devolve o resultado da primeira vez.
+ */
+export async function comIdempotencia(requisicao) {
+  const chave = gerarChaveIdempotencia();
+  let ultimoErro;
+  for (let i = 0; i < TENTATIVAS; i += 1) {
+    try {
+      return await requisicao({ 'Idempotency-Key': chave });
+    } catch (error) {
+      ultimoErro = error;
+      if (error.response) break;
+    }
+  }
+  throw ultimoErro;
+}

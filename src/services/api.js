@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { API_URL, IA_API_URL, REQUEST_TIMEOUT_MS, USE_MOCK } from '../config/env';
+import { API_URL, DOTNET_API_URL, IA_API_URL, REQUEST_TIMEOUT_MS, USE_MOCK } from '../config/env';
 import { lerToken } from './tokenStorage';
 import { mockAdapter } from './mock/mockAdapter';
 
@@ -44,11 +44,13 @@ function criarCliente(baseURL) {
 }
 
 export const api = criarCliente(API_URL);
+export const dotnetApi = criarCliente(DOTNET_API_URL);
 export const iaApi = IA_API_URL || USE_MOCK ? criarCliente(IA_API_URL || API_URL) : null;
 
 export function extrairLista(data) {
   if (Array.isArray(data)) return data;
   if (data && Array.isArray(data.conteudo)) return data.conteudo;
+  if (data && Array.isArray(data.itens)) return data.itens;
   if (data && Array.isArray(data.content)) return data.content;
   if (data && Array.isArray(data.items)) return data.items;
   return [];

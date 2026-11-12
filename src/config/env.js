@@ -1,10 +1,15 @@
 const JAVA_PADRAO = 'https://voz-do-bairro-java.onrender.com/api';
+const DOTNET_PADRAO = 'https://voz-do-bairro-dotnet.onrender.com/api';
 
 function limpar(url) {
   return url ? url.replace(/\/+$/, '') : '';
 }
 
+// login, propostas, respostas, notificações e placar
 export const API_URL = limpar(process.env.EXPO_PUBLIC_API_URL) || JAVA_PADRAO;
+
+// bairros, comentários e apoios
+export const DOTNET_API_URL = limpar(process.env.EXPO_PUBLIC_DOTNET_API_URL) || DOTNET_PADRAO;
 
 export const IA_API_URL = limpar(process.env.EXPO_PUBLIC_IA_API_URL);
 

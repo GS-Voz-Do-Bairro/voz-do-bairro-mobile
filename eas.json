@@ -10,7 +10,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://voz-do-bairro-java.onrender.com/api"
+        "EXPO_PUBLIC_API_URL": "https://voz-do-bairro-java.onrender.com/api",
+        "EXPO_PUBLIC_DOTNET_API_URL": "https://voz-do-bairro-dotnet.onrender.com/api"
       }
     },
     "production": {
@@ -18,7 +19,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://voz-do-bairro-java.onrender.com/api"
+        "EXPO_PUBLIC_API_URL": "https://voz-do-bairro-java.onrender.com/api",
+        "EXPO_PUBLIC_DOTNET_API_URL": "https://voz-do-bairro-dotnet.onrender.com/api"
       }
     }
   }

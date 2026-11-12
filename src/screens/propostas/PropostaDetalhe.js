@@ -26,7 +26,7 @@ import ErrorState from '../../components/ErrorState';
 import { FONTS, RADIUS, SHADOW, SPACING } from '../../constants/theme';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useProposta, useRemoverProposta } from '../../hooks/usePropostas';
-import { useApoio } from '../../hooks/useApoio';
+import { useApoio, useJaApoiou } from '../../hooks/useApoio';
 import { useComentarios, useRemoverComentario, useSalvarComentario } from '../../hooks/useComentarios';
 import { useConcluirDemanda } from '../../hooks/useDemandas';
 import { usePermissoes } from '../../hooks/usePermissoes';
@@ -44,6 +44,7 @@ export default function PropostaDetalhe({ navigation, route }) {
   const { data: proposta, isLoading, isError, error, refetch, isRefetching } = useProposta(id);
   const { data: comentarios = [], isLoading: carregandoComentarios } = useComentarios(id);
   const apoio = useApoio(id);
+  const { data: jaApoiou = false } = useJaApoiou(id, !permissoes.isGestor);
   const remover = useRemoverProposta();
   const salvarComentario = useSalvarComentario(id);
   const removerComentario = useRemoverComentario(id);
@@ -64,10 +65,11 @@ export default function PropostaDetalhe({ navigation, route }) {
   }
 
   const podeEditar = permissoes.podeEditarProposta(proposta);
+  const podeExcluir = permissoes.podeExcluirProposta(proposta);
   const prazoVencido = diasAte(proposta.prazoResposta) < 0;
 
   const handleApoio = () => {
-    apoio.mutate(!proposta.apoiadaPorMim, {
+    apoio.mutate(!jaApoiou, {
       onError: (e) => Alert.alert('Não foi possível registrar o apoio', mensagemDeErro(e)),
     });
   };
@@ -177,9 +179,13 @@ export default function PropostaDetalhe({ navigation, route }) {
           <Text style={styles.titulo}>{proposta.titulo}</Text>
           <Text style={styles.meta}>
             Por {proposta.autorNome || 'morador'} em {formatarData(proposta.criadaEm)}
-            {proposta.origem === 'AUDIO' ? ' · enviada por áudio' : ''}
           </Text>
 
+          {!proposta.resumoIa && proposta.status === 'ABERTA' && (
+            <Text style={styles.resumoNota}>
+              O resumo automático aparece em instantes. Puxe a tela para atualizar.
+            </Text>
+          )}
           {!!proposta.resumoIa && (
             <View style={styles.resumo}>
               <View style={styles.resumoCabecalho}>
@@ -206,16 +212,21 @@ export default function PropostaDetalhe({ navigation, route }) {
             )}
             {permissoes.podeApoiar(proposta) && (
               <PrimaryButton
-                label={proposta.apoiadaPorMim ? 'Retirar apoio' : 'Apoiar proposta'}
-                icon={proposta.apoiadaPorMim ? 'x' : 'thumbs-up'}
-                variant={proposta.apoiadaPorMim ? 'outline' : 'secondary'}
+                label={jaApoiou ? 'Retirar apoio' : 'Apoiar proposta'}
+                icon={jaApoiou ? 'x' : 'thumbs-up'}
+                variant={jaApoiou ? 'outline' : 'secondary'}
                 onPress={handleApoio}
                 loading={apoio.isPending}
                 style={styles.botao}
               />
             )}
-            {proposta.apoiadaPorMim && proposta.status !== 'ABERTA' && (
+            {jaApoiou && proposta.status !== 'ABERTA' && (
               <Text style={styles.cardNota}>Você apoiou esta proposta.</Text>
+            )}
+            {permissoes.ehAutor(proposta) && proposta.status === 'ABERTA' && (
+              <Text style={styles.cardNota}>
+                Você é o autor. Mostre a proposta aos vizinhos para juntar apoios.
+              </Text>
             )}
           </View>
 
@@ -261,7 +272,7 @@ export default function PropostaDetalhe({ navigation, route }) {
               style={styles.botao}
             />
           )}
-          {podeEditar && (
+          {podeExcluir && (
             <PrimaryButton
               label="Excluir proposta"
               icon="trash-2"

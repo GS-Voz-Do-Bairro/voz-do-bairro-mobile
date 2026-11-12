@@ -37,6 +37,16 @@ export function mapBairro(data) {
   };
 }
 
+/** Formulário de bairro → BairroRequest (API .NET). */
+export function bairroParaApi({ nome, subprefeitura, cidade, metaApoiosPadrao }) {
+  return {
+    nome: nome.trim(),
+    subprefeitura: subprefeitura.trim(),
+    cidade: cidade?.trim() || null,
+    metaApoiosPadrao: metaApoiosPadrao ? Number(metaApoiosPadrao) : null,
+  };
+}
+
 export function mapResposta(data) {
   if (!data) return null;
   return {
@@ -131,6 +141,8 @@ export function mapNotificacao(data) {
   };
 }
 
+// API .NET
+
 /** ComentarioResponse. */
 export function mapComentario(data) {
   return {
@@ -152,6 +164,29 @@ export function mapApoio(data) {
     status: data?.statusProposta ?? null,
     virouDemanda: !!data?.virouDemanda,
     prazoResposta: data?.prazoResposta ?? null,
+  };
+}
+
+/** ResumoApoiosResponse. usuarioApoiou vem null sem token. */
+export function mapResumoApoios(data) {
+  return {
+    totalApoios: Number(data?.totalApoios ?? 0),
+    metaApoios: Number(data?.metaApoios ?? 0),
+    percentual: Number(data?.percentual ?? 0),
+    status: data?.status ?? null,
+    usuarioApoiou: !!data?.usuarioApoiou,
+  };
+}
+
+/** MeuApoioResponse. */
+export function mapMeuApoio(data) {
+  return {
+    propostaId: data.propostaId,
+    titulo: data.tituloProposta ?? '',
+    status: data.statusProposta ?? 'ABERTA',
+    totalApoios: Number(data.totalApoios ?? 0),
+    metaApoios: Number(data.metaApoios ?? 0),
+    apoiadoEm: data.dtApoio ?? null,
   };
 }
 

@@ -1,44 +1,26 @@
-import { apoiosApi } from './api';
+import { dotnetApi, extrairLista } from './api';
 import { ENDPOINTS } from './endpoints';
-import { gerarChaveIdempotencia } from '../utils/idempotencia';
-
-const TENTATIVAS = 2;
-
-function erroDeRede(error) {
-  return !error.response;
-}
-
-async function comReenvio(requisicao) {
-  const chave = gerarChaveIdempotencia();
-  let ultimoErro;
-  for (let i = 0; i < TENTATIVAS; i += 1) {
-    try {
-      return await requisicao(chave);
-    } catch (error) {
-      ultimoErro = error;
-      if (!erroDeRede(error)) break;
-    }
-  }
-  throw ultimoErro;
-}
+import { mapApoio, mapMeuApoio, mapResumoApoios } from './mappers';
+import { comIdempotencia } from '../utils/idempotencia';
 
 export const apoiosService = {
-  apoiar: (propostaId) =>
-    comReenvio((chave) =>
-      apoiosApi.post(ENDPOINTS.apoios.apoiar, { propostaId }, { headers: { 'Idempotency-Key': chave } }),
-    ),
+  apoiar: async (propostaId) => {
+    const { data } = await comIdempotencia((headers) =>
+      dotnetApi.post(ENDPOINTS.apoios.daProposta(propostaId), null, { headers }),
+    );
+    return mapApoio(data);
+  },
 
-  retirar: (propostaId) =>
-    comReenvio((chave) =>
-      apoiosApi.delete(ENDPOINTS.apoios.retirar(propostaId), { headers: { 'Idempotency-Key': chave } }),
-    ),
+  retirar: (propostaId) => dotnetApi.delete(ENDPOINTS.apoios.daProposta(propostaId)),
 
-  situacao: async (propostaId) => {
-    const { data } = await apoiosApi.get(ENDPOINTS.apoios.situacao(propostaId));
-    return {
-      apoiada: !!(data?.apoiada ?? data?.apoiadaPorMim),
-      totalApoios: Number(data?.totalApoios ?? data?.total ?? 0),
-    };
+  resumo: async (propostaId) => {
+    const { data } = await dotnetApi.get(ENDPOINTS.apoios.resumo(propostaId));
+    return mapResumoApoios(data);
+  },
+
+  meus: async () => {
+    const { data } = await dotnetApi.get(ENDPOINTS.apoios.meus, { params: { page: 1, pageSize: 50 } });
+    return extrairLista(data).map(mapMeuApoio);
   },
 };
 
