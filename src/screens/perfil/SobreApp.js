@@ -1,0 +1,273 @@
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  Platform,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
+import Constants from 'expo-constants';
+
+import Header from '../../components/Header';
+import { FONTS, SPACING, RADIUS, SHADOW } from '../../constants/theme';
+import { BUILD_INFO } from '../../config/buildInfo';
+import { useTheme } from '../../contexts/ThemeContext';
+import useThemedStyles from '../../hooks/useThemedStyles';
+import { useQuery } from '@tanstack/react-query';
+import { saudeService } from '../../services/saudeService';
+
+function Linha({ icon, label, valor, styles, COLORS, mono = false, selecionavel = false }) {
+  return (
+    <View style={styles.linha}>
+      <View style={styles.linhaIcone}>
+        <Feather name={icon} size={16} color={COLORS.primary} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.linhaLabel}>{label}</Text>
+        <Text style={[styles.linhaValor, mono && styles.mono]} selectable={selecionavel}>
+          {valor}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+function StatusServico({ nome, consulta, styles, COLORS }) {
+  const cor = consulta.isFetching
+    ? COLORS.textMuted
+    : consulta.data?.online
+      ? COLORS.success
+      : COLORS.critical;
+  return (
+    <View style={styles.linha}>
+      <View style={[styles.ponto, { backgroundColor: cor }]} />
+      <View style={{ flex: 1 }}>
+        <Text style={styles.linhaValor}>{nome}</Text>
+        <Text style={styles.linhaLabel}>
+          {consulta.isFetching
+            ? 'Verificando... (pode levar até 1 minuto se o servidor estiver hibernando)'
+            : consulta.data?.online
+              ? `No ar · ${consulta.data.detalhe}`
+              : `Fora do ar · ${consulta.data?.detalhe ?? ''}`}
+        </Text>
+      </View>
+      {consulta.isFetching && <ActivityIndicator size="small" color={COLORS.primary} />}
+    </View>
+  );
+}
+
+export default function SobreApp({ navigation }) {
+  const { colors: COLORS, isDark } = useTheme();
+  const styles = useThemedStyles(createStyles);
+
+  const java = useQuery({ queryKey: ['saude', 'java'], queryFn: saudeService.java, retry: 0, staleTime: 0 });
+  const dotnet = useQuery({
+    queryKey: ['saude', 'dotnet'],
+    queryFn: saudeService.dotnet,
+    retry: 0,
+    staleTime: 0,
+  });
+
+  const dataBuild = BUILD_INFO.dataBuild
+    ? new Date(BUILD_INFO.dataBuild).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+    : '—';
+
+  return (
+    <SafeAreaView style={styles.safe} edges={['bottom']}>
+      <Header title="Sobre o App" onBack={() => navigation.goBack()} />
+
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.hero}>
+          <Image source={require('../../../assets/images/logo.png')} style={styles.logo} />
+          <Text style={styles.nome}>{BUILD_INFO.nome}</Text>
+          <Text style={styles.versao}>Versão {BUILD_INFO.versao}</Text>
+        </View>
+
+        <View style={styles.hashCard}>
+          <View style={styles.hashHeader}>
+            <Feather name="git-commit" size={18} color={COLORS.primary} />
+            <Text style={styles.hashTitulo}>Commit de referência</Text>
+          </View>
+          <Text style={styles.hashCurto} selectable>
+            {BUILD_INFO.commitCurto}
+          </Text>
+          <Text style={styles.hashCompleto} selectable>
+            {BUILD_INFO.commitHash}
+          </Text>
+          <Text style={styles.hashDica}>
+            Este é o hash do commit usado para gerar esta versão. Confira no GitHub: o commit com esse hash
+            contém exatamente o código deste aplicativo.
+          </Text>
+        </View>
+
+        <View style={styles.card}>
+          <View style={styles.cardCabecalho}>
+            <Text style={styles.cardTitulo}>Serviços</Text>
+            <TouchableOpacity
+              onPress={() => {
+                java.refetch();
+                dotnet.refetch();
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Verificar serviços de novo"
+              hitSlop={10}
+            >
+              <Feather name="refresh-cw" size={16} color={COLORS.primary} />
+            </TouchableOpacity>
+          </View>
+          <StatusServico nome="API Java" consulta={java} styles={styles} COLORS={COLORS} />
+          <View style={styles.divider} />
+          <StatusServico nome="API .NET" consulta={dotnet} styles={styles} COLORS={COLORS} />
+        </View>
+
+        <View style={styles.card}>
+          <Linha icon="git-branch" label="Branch" valor={BUILD_INFO.branch} styles={styles} COLORS={COLORS} />
+          <View style={styles.divider} />
+          <Linha icon="calendar" label="Data do build" valor={dataBuild} styles={styles} COLORS={COLORS} />
+          <View style={styles.divider} />
+          <Linha icon="server" label="Ambiente" valor={BUILD_INFO.ambiente} styles={styles} COLORS={COLORS} />
+          <View style={styles.divider} />
+          <Linha
+            icon="link"
+            label="API Java"
+            valor={BUILD_INFO.apiUrl}
+            styles={styles}
+            COLORS={COLORS}
+            mono
+            selecionavel
+          />
+          <View style={styles.divider} />
+          <Linha
+            icon="link-2"
+            label="API .NET"
+            valor={BUILD_INFO.dotnetApiUrl}
+            styles={styles}
+            COLORS={COLORS}
+            mono
+            selecionavel
+          />
+          <View style={styles.divider} />
+          <Linha
+            icon="smartphone"
+            label="Plataforma"
+            valor={`${Platform.OS === 'ios' ? 'iOS' : 'Android'} ${Platform.Version} · Expo SDK ${
+              Constants.expoConfig?.sdkVersion?.split('.')[0] ?? '—'
+            }`}
+            styles={styles}
+            COLORS={COLORS}
+          />
+          <View style={styles.divider} />
+          <Linha
+            icon={isDark ? 'moon' : 'sun'}
+            label="Tema ativo"
+            valor={isDark ? 'Escuro' : 'Claro'}
+            styles={styles}
+            COLORS={COLORS}
+          />
+        </View>
+
+        <Text style={styles.rodape}>
+          Voz do Bairro · Global Solution FIAP 2026{'\n'}
+          Participação cidadã com cobrança de resultado.
+        </Text>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const createStyles = (COLORS) =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: COLORS.background },
+    content: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
+    cardCabecalho: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: SPACING.md,
+    },
+    cardTitulo: { fontFamily: FONTS.subtitle, fontSize: FONTS.sizes.md, color: COLORS.textPrimary },
+    ponto: { width: 12, height: 12, borderRadius: 6, marginHorizontal: 10 },
+    hero: { alignItems: 'center', marginVertical: SPACING.lg },
+    logo: {
+      width: 96,
+      height: 96,
+      borderRadius: 24,
+      marginBottom: SPACING.md,
+      backgroundColor: COLORS.surface,
+    },
+    nome: { color: COLORS.textPrimary, fontSize: FONTS.sizes.xxl, fontFamily: FONTS.title },
+    versao: {
+      color: COLORS.textSecondary,
+      fontSize: FONTS.sizes.md,
+      fontFamily: FONTS.regular,
+      marginTop: 2,
+    },
+    hashCard: {
+      backgroundColor: COLORS.surface,
+      borderRadius: RADIUS.lg,
+      padding: SPACING.lg,
+      borderWidth: 1.5,
+      borderColor: COLORS.primary,
+      marginBottom: SPACING.lg,
+      ...SHADOW.card,
+    },
+    hashHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: SPACING.sm },
+    hashTitulo: { color: COLORS.textSecondary, fontSize: FONTS.sizes.sm, fontFamily: FONTS.bold },
+    hashCurto: {
+      color: COLORS.primary,
+      fontSize: FONTS.sizes.xxxl,
+      fontWeight: '700',
+      letterSpacing: 2,
+      fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    },
+    hashCompleto: {
+      color: COLORS.textPrimary,
+      fontSize: FONTS.sizes.xs,
+      marginTop: 4,
+      fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    },
+    hashDica: {
+      color: COLORS.textMuted,
+      fontSize: FONTS.sizes.xs,
+      fontFamily: FONTS.regular,
+      marginTop: SPACING.md,
+      lineHeight: 17,
+    },
+    card: {
+      backgroundColor: COLORS.surface,
+      borderRadius: RADIUS.lg,
+      padding: SPACING.lg,
+      marginBottom: SPACING.lg,
+      ...SHADOW.card,
+    },
+    linha: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
+    linhaIcone: {
+      width: 34,
+      height: 34,
+      borderRadius: RADIUS.sm,
+      backgroundColor: COLORS.surfaceAlt,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    linhaLabel: { color: COLORS.textMuted, fontSize: FONTS.sizes.xs, fontFamily: FONTS.regular },
+    linhaValor: {
+      color: COLORS.textPrimary,
+      fontSize: FONTS.sizes.md,
+      fontFamily: FONTS.semibold,
+      marginTop: 1,
+    },
+    mono: { fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', fontSize: FONTS.sizes.sm },
+    divider: { height: 1, backgroundColor: COLORS.border, marginVertical: SPACING.md },
+    rodape: {
+      color: COLORS.textMuted,
+      fontSize: FONTS.sizes.xs,
+      fontFamily: FONTS.regular,
+      textAlign: 'center',
+      lineHeight: 18,
+    },
+  });
