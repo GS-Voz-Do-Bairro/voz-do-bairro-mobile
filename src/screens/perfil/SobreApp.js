@@ -1,5 +1,14 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  Platform,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import Constants from 'expo-constants';
@@ -9,6 +18,8 @@ import { FONTS, SPACING, RADIUS, SHADOW } from '../../constants/theme';
 import { BUILD_INFO } from '../../config/buildInfo';
 import { useTheme } from '../../contexts/ThemeContext';
 import useThemedStyles from '../../hooks/useThemedStyles';
+import { useQuery } from '@tanstack/react-query';
+import { saudeService } from '../../services/saudeService';
 
 function Linha({ icon, label, valor, styles, COLORS, mono = false, selecionavel = false }) {
   return (
@@ -26,9 +37,41 @@ function Linha({ icon, label, valor, styles, COLORS, mono = false, selecionavel 
   );
 }
 
+function StatusServico({ nome, consulta, styles, COLORS }) {
+  const cor = consulta.isFetching
+    ? COLORS.textMuted
+    : consulta.data?.online
+      ? COLORS.success
+      : COLORS.critical;
+  return (
+    <View style={styles.linha}>
+      <View style={[styles.ponto, { backgroundColor: cor }]} />
+      <View style={{ flex: 1 }}>
+        <Text style={styles.linhaValor}>{nome}</Text>
+        <Text style={styles.linhaLabel}>
+          {consulta.isFetching
+            ? 'Verificando... (pode levar até 1 minuto se o servidor estiver hibernando)'
+            : consulta.data?.online
+              ? `No ar · ${consulta.data.detalhe}`
+              : `Fora do ar · ${consulta.data?.detalhe ?? ''}`}
+        </Text>
+      </View>
+      {consulta.isFetching && <ActivityIndicator size="small" color={COLORS.primary} />}
+    </View>
+  );
+}
+
 export default function SobreApp({ navigation }) {
   const { colors: COLORS, isDark } = useTheme();
   const styles = useThemedStyles(createStyles);
+
+  const java = useQuery({ queryKey: ['saude', 'java'], queryFn: saudeService.java, retry: 0, staleTime: 0 });
+  const dotnet = useQuery({
+    queryKey: ['saude', 'dotnet'],
+    queryFn: saudeService.dotnet,
+    retry: 0,
+    staleTime: 0,
+  });
 
   const dataBuild = BUILD_INFO.dataBuild
     ? new Date(BUILD_INFO.dataBuild).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
@@ -63,6 +106,26 @@ export default function SobreApp({ navigation }) {
         </View>
 
         <View style={styles.card}>
+          <View style={styles.cardCabecalho}>
+            <Text style={styles.cardTitulo}>Serviços</Text>
+            <TouchableOpacity
+              onPress={() => {
+                java.refetch();
+                dotnet.refetch();
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Verificar serviços de novo"
+              hitSlop={10}
+            >
+              <Feather name="refresh-cw" size={16} color={COLORS.primary} />
+            </TouchableOpacity>
+          </View>
+          <StatusServico nome="API Java" consulta={java} styles={styles} COLORS={COLORS} />
+          <View style={styles.divider} />
+          <StatusServico nome="API .NET" consulta={dotnet} styles={styles} COLORS={COLORS} />
+        </View>
+
+        <View style={styles.card}>
           <Linha icon="git-branch" label="Branch" valor={BUILD_INFO.branch} styles={styles} COLORS={COLORS} />
           <View style={styles.divider} />
           <Linha icon="calendar" label="Data do build" valor={dataBuild} styles={styles} COLORS={COLORS} />
@@ -81,8 +144,8 @@ export default function SobreApp({ navigation }) {
           <View style={styles.divider} />
           <Linha
             icon="link-2"
-            label="API de apoios (.NET)"
-            valor={BUILD_INFO.apoiosApiUrl}
+            label="API .NET"
+            valor={BUILD_INFO.dotnetApiUrl}
             styles={styles}
             COLORS={COLORS}
             mono
@@ -121,6 +184,14 @@ const createStyles = (COLORS) =>
   StyleSheet.create({
     safe: { flex: 1, backgroundColor: COLORS.background },
     content: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
+    cardCabecalho: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: SPACING.md,
+    },
+    cardTitulo: { fontFamily: FONTS.subtitle, fontSize: FONTS.sizes.md, color: COLORS.textPrimary },
+    ponto: { width: 12, height: 12, borderRadius: 6, marginHorizontal: 10 },
     hero: { alignItems: 'center', marginVertical: SPACING.lg },
     logo: {
       width: 96,
