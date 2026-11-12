@@ -66,3 +66,18 @@ export function validarResposta({ decisao, justificativa, prazoExecucao }) {
   }
   return erros;
 }
+
+export function validarBairro({ nome, subprefeitura, cidade, metaApoiosPadrao }) {
+  const erros = {};
+  if (!tamanho(nome)) erros.nome = 'Informe o nome do bairro.';
+  else if (tamanho(nome) > 100) erros.nome = 'Máximo de 100 caracteres.';
+  if (!tamanho(subprefeitura)) erros.subprefeitura = 'Informe a subprefeitura.';
+  else if (tamanho(subprefeitura) > 100) erros.subprefeitura = 'Máximo de 100 caracteres.';
+  if (tamanho(cidade) > 100) erros.cidade = 'Máximo de 100 caracteres.';
+  if (metaApoiosPadrao) {
+    const meta = Number(metaApoiosPadrao);
+    if (!Number.isInteger(meta) || meta < 1 || meta > 999999)
+      erros.metaApoiosPadrao = 'Use um número entre 1 e 999999.';
+  }
+  return erros;
+}
