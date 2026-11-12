@@ -5,7 +5,7 @@ import { Feather } from '@expo/vector-icons';
 import { FONTS, SPACING } from '../constants/theme';
 import useThemedStyles from '../hooks/useThemedStyles';
 
-export default function Header({ title, subtitle, onBack, rightIcon, onRightPress, rightLabel }) {
+export default function Header({ title, subtitle, onBack, rightIcon, onRightPress, rightLabel, badge = 0 }) {
   const styles = useThemedStyles(createStyles);
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -32,6 +32,11 @@ export default function Header({ title, subtitle, onBack, rightIcon, onRightPres
         {rightIcon ? (
           <TouchableOpacity style={styles.iconButton} onPress={onRightPress} accessibilityLabel={rightLabel}>
             <Feather name={rightIcon} size={20} color="#FFFFFF" />
+            {badge > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeTexto}>{badge > 9 ? '9+' : badge}</Text>
+              </View>
+            )}
           </TouchableOpacity>
         ) : (
           <View style={styles.iconPlaceholder} />
@@ -76,6 +81,23 @@ const createStyles = (COLORS) =>
       justifyContent: 'center',
       borderRadius: 10,
       backgroundColor: 'rgba(255,255,255,0.15)',
+    },
+    badge: {
+      position: 'absolute',
+      top: -4,
+      right: -4,
+      minWidth: 18,
+      height: 18,
+      borderRadius: 9,
+      paddingHorizontal: 4,
+      backgroundColor: COLORS.secondary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    badgeTexto: {
+      color: '#FFFFFF',
+      fontFamily: FONTS.bold,
+      fontSize: 10,
     },
     iconPlaceholder: {
       width: 38,

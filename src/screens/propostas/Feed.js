@@ -17,6 +17,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { usePropostas } from '../../hooks/usePropostas';
 import { usePermissoes } from '../../hooks/usePermissoes';
 import { useDebounce } from '../../hooks/useDebounce';
+import { useBairros } from '../../hooks/useBairros';
+import { useNaoLidas } from '../../hooks/useNotificacoes';
 import useThemedStyles from '../../hooks/useThemedStyles';
 
 const FILTROS_CATEGORIA = [
@@ -28,15 +30,29 @@ export default function Feed({ navigation }) {
   const { colors: COLORS } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { usuario } = useAuth();
-  const { podeCriarProposta } = usePermissoes();
+  const { podeCriarProposta, isGestor } = usePermissoes();
 
   const [busca, setBusca] = useState('');
   const [status, setStatus] = useState(null);
   const [categoria, setCategoria] = useState(null);
   const buscaAtrasada = useDebounce(busca.trim());
 
-  const filtros = { bairroId: usuario?.bairroId, status, categoria, busca: buscaAtrasada };
-  const { data: propostas, isLoading, isError, error, refetch, isRefetching } = usePropostas(filtros);
+  const naoLidas = useNaoLidas();
+  const { data: bairros = [] } = useBairros();
+  const [bairroGestor, setBairroGestor] = useState(null);
+  const bairroId = isGestor ? bairroGestor : usuario?.bairroId;
+
+  const {
+    data: propostas,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isRefetching,
+  } = usePropostas({ bairroId, status, categoria }, buscaAtrasada);
+  const filtrosBairro = [{ valor: null, label: 'Todos os bairros', icon: 'map' }].concat(
+    bairros.map((b) => ({ valor: b.id, label: b.nome, icon: 'map-pin' })),
+  );
 
   const abrirProposta = (proposta) => navigation.navigate('PropostaDetalhe', { id: proposta.id });
   const temFiltro = !!(status || categoria || buscaAtrasada);
@@ -49,7 +65,12 @@ export default function Feed({ navigation }) {
         data={propostas}
         keyExtractor={(item) => String(item.id)}
         renderItem={({ item }) => (
-          <PropostaCard proposta={item} onPress={() => abrirProposta(item)} mostrarPrazo />
+          <PropostaCard
+            proposta={item}
+            onPress={() => abrirProposta(item)}
+            mostrarPrazo
+            mostrarBairro={!bairroId}
+          />
         )}
         contentContainerStyle={styles.lista}
         refreshControl={
@@ -78,7 +99,14 @@ export default function Feed({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
-      <Header title="Propostas" subtitle={usuario?.bairroNome} />
+      <Header
+        title="Propostas"
+        subtitle={isGestor ? 'Prefeitura' : usuario?.bairroNome}
+        rightIcon="bell"
+        rightLabel="Notificações"
+        badge={naoLidas}
+        onRightPress={() => navigation.navigate('Notificacoes')}
+      />
 
       <View style={styles.filtros}>
         <View style={styles.busca}>
@@ -98,6 +126,9 @@ export default function Feed({ navigation }) {
             </TouchableOpacity>
           )}
         </View>
+        {isGestor && (
+          <FiltroChips opcoes={filtrosBairro} selecionado={bairroGestor} onSelecionar={setBairroGestor} />
+        )}
         <FiltroChips opcoes={FILTROS_STATUS} selecionado={status} onSelecionar={setStatus} />
         <FiltroChips opcoes={FILTROS_CATEGORIA} selecionado={categoria} onSelecionar={setCategoria} />
       </View>
