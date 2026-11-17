@@ -206,13 +206,15 @@ npm run format    # Prettier
 
 ### Contas de teste
 
-São as mesmas do script do banco (valem para as duas APIs). Senha de todas: `Senha@123`
+São os usuários criados pelo script do banco (`banco/script-bd-base.sql` da API Java) e valem para as duas APIs.
 
-| Perfil | E-mail |
-|---|---|
-| Cidadã (Capão Redondo) | `cidadao@vozdobairro.com` |
-| Cidadão (Capão Redondo) | `vizinho@vozdobairro.com` |
-| Gestora | `gestor@vozdobairro.com` |
+| Perfil | Nome | E-mail | Senha |
+|---|---|---|---|
+| Cidadã (Capão Redondo) | Maria Cidadã | `cidadao@vozdobairro.com` | `Senha@123` |
+| Cidadão (Capão Redondo) | João Vizinho | `vizinho@vozdobairro.com` | `Senha@123` |
+| Gestora | Carla Gestora | `gestor@vozdobairro.com` | `Senha@123` |
+
+Maria e João são do mesmo bairro, então um pode apoiar a proposta do outro (o autor não pode apoiar a própria).
 
 ## Sobre o App
 
