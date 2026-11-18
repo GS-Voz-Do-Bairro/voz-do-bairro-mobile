@@ -4,6 +4,19 @@ Aplicativo de participação cidadã com cobrança de resultado. Moradores prop�
 
 Projeto da Global Solution FIAP 2026 (CitizenTech), disciplina Mobile Application Development. O app consome as duas APIs do grupo ao mesmo tempo: a API Java (Spring Boot) e a API .NET (ASP.NET Core 8). As duas usam o mesmo banco e o mesmo token JWT, então o usuário faz login uma vez só.
 
+## Antes de usar o app: acorde as APIs
+
+As duas APIs estão hospedadas no Render, no plano gratuito. Nesse plano o servidor desliga depois de 15 minutos sem uso e leva até 1 minuto para ligar de novo. **Antes de abrir o app, acesse os dois links abaixo e espere cada um responder:**
+
+| API | Link | Resposta esperada |
+|---|---|---|
+| Java | https://voz-do-bairro-java.onrender.com/actuator/health | `{"status":"UP"}` |
+| .NET | https://voz-do-bairro-dotnet.onrender.com/health | `"status":"Healthy"` |
+
+Com as duas no ar, o login e o resto do app funcionam normalmente. Dentro do app, a tela **Perfil > Sobre o app > Serviços** também mostra se cada API está no ar (bolinha verde).
+
+Contas de teste (senha `Senha@123` para todas): `cidadao@vozdobairro.com`, `vizinho@vozdobairro.com` e `gestor@vozdobairro.com`.
+
 ## Integrantes
 
 | Nome | RM | Turma |
