@@ -29,7 +29,7 @@ Contas de teste (senha `Senha@123` para todas): `cidadao@vozdobairro.com`, `vizi
 
 ## Vídeo
 
-Demonstração do app: [link do vídeo](COLE_AQUI_O_LINK_DO_YOUTUBE)
+Demonstração do app: https://youtu.be/uOgZN3gnjDc
 
 ## Problema e solução
 
