@@ -29,8 +29,13 @@
       "package": "com.fiap.vozdobairro",
       "versionCode": 1
     },
-    "web": {
+       "web": {
       "favicon": "./assets/icon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "1669a40a-b36c-4e23-ab8a-f444f651211e"
+      }
     },
     "plugins": [
       [
